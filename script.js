@@ -1,6 +1,6 @@
 // TODO: replace this with your own free key from twelvedata.com
 // Sign up, copy the key from your dashboard, and paste it below.
-const API_KEY = "YOUR_TWELVE_DATA_API_KEY";
+const API_KEY = "8b512483caf04a168b28da4791fedaa4";
 
 const form = document.getElementById("search-form");
 const input = document.getElementById("ticker-input");
