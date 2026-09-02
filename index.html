@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>wicklab</title>
+<meta name="description" content="Candlestick charts with a browser side machine learning trend model.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="ambient-glow glow-top" aria-hidden="true"></div>
+  <div class="ambient-glow glow-bottom" aria-hidden="true"></div>
+
+  <main class="page">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button type="button" id="drawer-btn" class="icon-btn drawer-btn" aria-label="Open watchlist" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <span class="wordmark">wicklab</span>
+      </div>
+      <span id="status-pill" class="status-pill">Idle</span>
+    </header>
+
+    <div class="layout">
+      <aside id="sidebar" class="sidebar" aria-label="Watchlist and recent searches">
+        <div class="side-block">
+          <div class="side-head">
+            <span class="side-title">Watchlist <span id="fav-count" class="side-meta"></span></span>
+            <span class="side-actions">
+              <span id="watchlist-updated" class="side-meta"></span>
+              <button type="button" id="watchlist-refresh" class="icon-btn" aria-label="Refresh watchlist">
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button type="button" id="drawer-close" class="icon-btn drawer-close" aria-label="Close watchlist">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </span>
+          </div>
+          <div id="watchlist" class="watchlist"></div>
+          <div id="watchlist-note" class="side-note hidden"></div>
+        </div>
+
+        <div class="side-block">
+          <div class="side-head">
+            <span class="side-title">Recent</span>
+          </div>
+          <div id="recents" class="recents"></div>
+        </div>
+      </aside>
+      <div id="drawer-backdrop" class="drawer-backdrop"></div>
+
+      <div class="content">
+        <form id="search-form" class="search-bar" autocomplete="off">
+          <input
+            type="text"
+            id="ticker-input"
+            placeholder="Search a ticker, like AAPL or TSLA"
+            aria-label="Stock ticker symbol"
+          />
+          <button type="submit" id="search-btn">View chart</button>
+        </form>
+
+        <div class="controls">
+          <div class="segmented" id="timeframes" role="group" aria-label="Timeframe">
+            <button type="button" data-tf="1m">1m</button>
+            <button type="button" data-tf="5m">5m</button>
+            <button type="button" data-tf="15m">15m</button>
+            <button type="button" data-tf="1h">1h</button>
+            <button type="button" data-tf="4h">4h</button>
+            <button type="button" data-tf="1D" class="active">1D</button>
+            <button type="button" data-tf="1W">1W</button>
+          </div>
+
+          <div class="controls-right">
+            <div class="dropdown" id="indicator-dropdown">
+              <button type="button" id="indicator-toggle" class="control-btn" aria-haspopup="true" aria-expanded="false">
+                Indicators <span id="indicator-count" class="count-badge">2</span>
+              </button>
+              <div id="indicator-panel" class="dropdown-panel" hidden></div>
+            </div>
+
+            <label class="switch">
+              <input type="checkbox" id="volume-toggle" checked>
+              <span class="switch-track" aria-hidden="true"></span>
+              <span>Volume</span>
+            </label>
+          </div>
+        </div>
+
+        <p id="status-message" class="status-message" role="status" aria-live="polite"></p>
+
+        <section class="chart-panel" id="chart-panel">
+          <div id="chart-header" class="chart-header hidden">
+            <div class="chart-title">
+              <span id="chart-symbol" class="chart-symbol"></span>
+              <button type="button" id="star-btn" class="star-btn" aria-pressed="false" aria-label="Add to watchlist">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2.5l2.9 6.2 6.8.8-5 4.7 1.3 6.8L12 17.7 6 21l1.3-6.8-5-4.7 6.8-.8z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+              </button>
+              <span id="chart-price" class="chart-price"></span>
+              <span id="chart-change" class="chart-change"></span>
+            </div>
+            <div class="stats">
+              <div class="stat">
+                <span class="stat-label">Model bias</span>
+                <span id="stat-bias" class="stat-value">Warming up</span>
+                <span class="bias-track"><span id="bias-bar" class="bias-fill"></span></span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Trend</span>
+                <span id="stat-trend" class="stat-value">n/a</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Volatility</span>
+                <span id="stat-vol" class="stat-value">n/a</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Last signal</span>
+                <span id="stat-signal" class="stat-value">n/a</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="skeleton" class="skeleton hidden" aria-hidden="true"></div>
+          <div id="empty-state" class="empty-state">Search a ticker above to load its chart.</div>
+          <div id="chart-container" class="chart-container hidden"></div>
+          <div id="legend" class="legend"></div>
+        </section>
+
+        <p class="disclaimer">
+          Signals come from a small machine learning model (k-nearest neighbors pattern matching)
+          and classic technical indicators running in your browser. They are experimental, frequently
+          wrong, and not financial advice. Nothing on this page is a real forecast.
+        </p>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <span>&copy; 2026 wicklab. All rights reserved.</span>
+      <span>@milespotten</span>
+    </footer>
+  </main>
+
+  <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+  <script src="config.js"></script>
+  <script src="indicators.js"></script>
+  <script src="api.js"></script>
+  <script src="chart.js"></script>
+  <script src="watchlist.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
